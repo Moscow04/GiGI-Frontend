@@ -1,16 +1,25 @@
-# React + Vite
+# GIGI Cloud Academy — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + Vite frontend for GIGI Cloud Academy, a tech training platform. Built with Tailwind CSS and React Router.
 
-Currently, two official plugins are available:
+## Quick Start
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev      # development at http://localhost:5173
+npm run build    # production build to dist/
+```
 
-## React Compiler
+## Deployment
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+See the full end-to-end deployment guide in the [backend repository](https://github.com/Moscow04/GiGi-Backend/blob/master/DEPLOYMENT.md), which covers:
 
-## Expanding the Oxlint configuration
+- Server setup (Nginx, Node.js, PostgreSQL)
+- Building and deploying the frontend
+- Configuring SSL with Let's Encrypt
+- Running the backend as a systemd service
+- Monitoring and maintenance
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## API
+
+The frontend is designed to work with the [GiGi-Backend API](https://github.com/Moscow04/GiGi-Backend). Update the API base URL in the application code to match your backend server.
