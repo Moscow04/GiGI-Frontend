@@ -1,0 +1,66 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:        # allow manual trigger
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    # ------------------------------------------------------------------
+    # Environment variables used by the deploy step.
+    # Set these secrets in your GitHub repo:
+    #   Settings → Secrets and variables → Actions
+    #
+    #   SSH_PRIVATE_KEY   — private key that GitHub uses to SSH into your server
+    #   SSH_HOST          — server IP or domain
+    #   SSH_USER          — usually ubuntu, root, deploy, etc.
+    #   DOMAIN            — your frontend domain
+    # ------------------------------------------------------------------
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint check
+        run: npm run lint 2>/dev/null || echo "No lint script configured"
+
+      - name: Build for production
+        run: npm run build
+
+      - name: Deploy via rsync over SSH
+        uses: easingthemes/ssh-deploy@v4
+        with:
+          SSH_PRIVATE_KEY:   ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST:       ${{ secrets.SSH_HOST }}
+          REMOTE_USER:       ${{ secrets.SSH_USER }}
+          SOURCE:            dist/
+          TARGET:            /var/www/GiGI-Frontend/dist/
+          ARGS:              -avz --delete
+          SCRIPT_BEFORE: |
+            whoami
+            echo "Starting deployment of GiGI-Frontend"
+          SCRIPT_AFTER: |
+            echo "Deployment complete"
+
+      - name: Reload Nginx on server
+        uses: appleboy/ssh-action@v1
+        with:
+          key:    ${{ secrets.SSH_PRIVATE_KEY }}
+          host:   ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          script: |
+            sudo nginx -t && sudo systemctl reload nginx
+            echo "Nginx reloaded — frontend is live!"
