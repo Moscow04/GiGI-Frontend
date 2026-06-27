@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import API_BASE from '../config'
 
 const AuthContext = createContext(null)
 
@@ -7,37 +8,59 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const stored = localStorage.getItem('gigi_user')
-    if (stored) setUser(JSON.parse(stored))
-    setLoading(false)
+    const token = localStorage.getItem('gigi_token')
+    if (!token) return setLoading(false)
+
+    fetch(`${API_BASE}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) setUser(data.user)
+        else localStorage.removeItem('gigi_token')
+      })
+      .catch(() => localStorage.removeItem('gigi_token'))
+      .finally(() => setLoading(false))
   }, [])
 
-  const register = (name, email, password) => {
-    const users = JSON.parse(localStorage.getItem('gigi_users') || '[]')
-    if (users.find((u) => u.email === email)) return { error: 'Email already registered' }
-    const newUser = { id: Date.now(), name, email, password }
-    users.push(newUser)
-    localStorage.setItem('gigi_users', JSON.stringify(users))
-    const { password: _, ...safe } = newUser
-    setUser(safe)
-    localStorage.setItem('gigi_user', JSON.stringify(safe))
-    return { success: true }
-  }
+  const register = useCallback(async (name, email, password) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      })
+      const data = await res.json()
+      if (!res.ok) return { error: data.errors ? data.errors.join(', ') : data.error }
+      localStorage.setItem('gigi_token', data.token)
+      setUser(data.user)
+      return { success: true }
+    } catch {
+      return { error: 'Network error — is the server running?' }
+    }
+  }, [])
 
-  const login = (email, password) => {
-    const users = JSON.parse(localStorage.getItem('gigi_users') || '[]')
-    const found = users.find((u) => u.email === email && u.password === password)
-    if (!found) return { error: 'Invalid email or password' }
-    const { password: _, ...safe } = found
-    setUser(safe)
-    localStorage.setItem('gigi_user', JSON.stringify(safe))
-    return { success: true }
-  }
+  const login = useCallback(async (email, password) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json()
+      if (!res.ok) return { error: data.errors ? data.errors.join(', ') : data.error }
+      localStorage.setItem('gigi_token', data.token)
+      setUser(data.user)
+      return { success: true }
+    } catch {
+      return { error: 'Network error — is the server running?' }
+    }
+  }, [])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null)
-    localStorage.removeItem('gigi_user')
-  }
+    localStorage.removeItem('gigi_token')
+  }, [])
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout }}>

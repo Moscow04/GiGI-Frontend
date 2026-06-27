@@ -1,13 +1,27 @@
-import { useAuth } from '../context/AuthContext'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-
-const enrolledCourses = [
-  { title: 'AWS Cloud Practitioner', progress: 75, next: 'Module 4: AWS Core Services' },
-  { title: 'Docker & Kubernetes', progress: 30, next: 'Module 2: Container Images & Registries' },
-]
+import { useAuth } from '../context/AuthContext'
+import API_BASE from '../config'
 
 export default function Dashboard() {
   const { user } = useAuth()
+  const [enrollments, setEnrollments] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const token = localStorage.getItem('gigi_token')
+    if (!token) return setLoading(false)
+
+    fetch(`${API_BASE}/api/enrollments/my`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.enrollments) setEnrollments(data.enrollments)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
@@ -19,16 +33,23 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <h2 className="text-2xl font-semibold text-gray-900">My Courses</h2>
-          {enrolledCourses.map((c) => (
-            <div key={c.title} className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+          {loading && <p className="text-gray-500">Loading enrollments…</p>}
+          {!loading && enrollments.length === 0 && (
+            <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-10 text-center">
+              <p className="text-gray-500 mb-4">You're not enrolled in any courses yet.</p>
+              <Link to="/courses" className="text-indigo-700 font-medium hover:text-indigo-500 transition">Browse courses →</Link>
+            </div>
+          )}
+          {enrollments.map((e) => (
+            <div key={e.id} className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">{c.title}</h3>
-                <span className="text-sm font-medium text-indigo-700">{c.progress}% complete</span>
+                <h3 className="text-lg font-semibold text-gray-900">{e.title}</h3>
+                <span className="text-sm font-medium text-indigo-700">{e.progress}% complete</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-                <div className="bg-indigo-700 h-2.5 rounded-full transition-all" style={{ width: `${c.progress}%` }}></div>
+                <div className="bg-indigo-700 h-2.5 rounded-full transition-all" style={{ width: `${e.progress}%` }}></div>
               </div>
-              <p className="text-sm text-gray-500 mb-4">Next: {c.next}</p>
+              <p className="text-sm text-gray-500 mb-4">{e.category} · {e.level}</p>
               <button className="bg-indigo-700 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-indigo-800 transition cursor-pointer">Continue Learning</button>
             </div>
           ))}
@@ -51,7 +72,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <span className="text-gray-500">Member since:</span>
-                <p className="text-gray-900 font-medium">{new Date(user?.id).toLocaleDateString()}</p>
+                <p className="text-gray-900 font-medium">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Today'}</p>
               </div>
             </div>
           </div>

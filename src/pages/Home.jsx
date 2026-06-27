@@ -1,10 +1,12 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import API_BASE from '../config'
 
-const courses = [
-  { title: 'AWS Cloud Practitioner', desc: 'Foundational cloud concepts, services, and terminology on AWS.', level: 'Beginner' },
-  { title: 'Azure Administrator', desc: 'Manage Azure subscriptions, secure identities, and configure storage.', level: 'Intermediate' },
-  { title: 'Google Cloud Engineer', desc: 'Deploy applications, monitor operations, and manage GCP solutions.', level: 'Intermediate' },
-  { title: 'DevOps with Docker & Kubernetes', desc: 'Containerization, orchestration, CI/CD pipelines, and monitoring.', level: 'Advanced' },
+const fallbackCourses = [
+  { title: 'AWS Cloud Practitioner', description: 'Foundational cloud concepts, services, and terminology on AWS.', level: 'Beginner' },
+  { title: 'Azure Administrator', description: 'Manage Azure subscriptions, secure identities, and configure storage.', level: 'Intermediate' },
+  { title: 'Google Cloud Engineer', description: 'Deploy applications, monitor operations, and manage GCP solutions.', level: 'Intermediate' },
+  { title: 'DevOps with Docker & Kubernetes', description: 'Containerization, orchestration, CI/CD pipelines, and monitoring.', level: 'Advanced' },
 ]
 
 const stats = [
@@ -15,6 +17,15 @@ const stats = [
 ]
 
 export default function Home() {
+  const [courses, setCourses] = useState(fallbackCourses)
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/courses`)
+      .then((r) => r.json())
+      .then((d) => { if (d.courses?.length) setCourses(d.courses.slice(0, 4)) })
+      .catch(() => {})
+  }, [])
+
   return (
     <>
       <section className="bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-800 text-white">
@@ -49,7 +60,7 @@ export default function Home() {
               <div key={c.title} className="bg-white rounded-xl shadow-md hover:shadow-lg transition p-6 border border-gray-100 flex flex-col">
                 <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full self-start mb-3">{c.level}</span>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">{c.title}</h3>
-                <p className="text-gray-600 text-sm flex-1">{c.desc}</p>
+                <p className="text-gray-600 text-sm flex-1">{c.description || c.desc}</p>
                 <Link to="/courses" className="mt-4 text-indigo-700 font-medium text-sm hover:text-indigo-500 transition">Learn more &rarr;</Link>
               </div>
             ))}
