@@ -11,11 +11,11 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem('gigi_token')
     if (!token) return setLoading(false)
 
-    fetch(`${API_BASE}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
+    fetch(API_BASE + '/api/auth/me', {
+      headers: { Authorization: 'Bearer ' + token },
     })
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
         if (data.user) setUser(data.user)
         else localStorage.removeItem('gigi_token')
       })
@@ -25,24 +25,22 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (name, email, password) => {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/register`, {
+      const res = await fetch(API_BASE + '/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       })
       const data = await res.json()
       if (!res.ok) return { error: data.errors ? data.errors.join(', ') : data.error }
-      localStorage.setItem('gigi_token', data.token)
-      setUser(data.user)
-      return { success: true }
+      return { success: true, message: data.message }
     } catch {
-      return { error: 'Network error — is the server running?' }
+      return { error: 'Network error - is the server running?' }
     }
   }, [])
 
   const login = useCallback(async (email, password) => {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await fetch(API_BASE + '/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -53,7 +51,7 @@ export function AuthProvider({ children }) {
       setUser(data.user)
       return { success: true }
     } catch {
-      return { error: 'Network error — is the server running?' }
+      return { error: 'Network error - is the server running?' }
     }
   }, [])
 
